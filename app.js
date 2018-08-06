@@ -9,6 +9,8 @@ var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 
 const mongoose = require('mongoose');
 
@@ -32,16 +34,26 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
 // pass the secret key to the cookieParser()
-app.use(cookieParser('12345-67890-09876-54321'));
+// app.use(cookieParser('12345-67890-09876-54321'));
+
+// this session middleware adds req.session to the request message
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
 
 // Authentication function
 function auth(req, res, next) {
-  console.log(req.signedCookies);
+  console.log(req.session);
 
-  //if the signed cookie doesn't contain the user property,
+  //if the session doesn't contain the user property,
   // the a user has to use an authorization header for authorization
-  if(!req.signedCookies.user) {
+  if(!req.session.user) {
     var authHeader = req.headers.authorization;
 
     // if authorization header is null, means that a user didn't provide login and password information
@@ -62,8 +74,7 @@ function auth(req, res, next) {
 
     // if default username and password match the request
     if (username === 'admin' && password === 'password') {
-      // include cookie with name 'user' and value 'admin'
-      res.cookie('user', 'admin', {signed: true})
+      req.session.user = 'admin';
       // this next() means that the request is passed to the next set of middleware (to below app.use())
       next();
     }
@@ -76,8 +87,8 @@ function auth(req, res, next) {
   }
   // if the cookie exists and the user property is defined
   else {
-    // if signedCookies contains the correct information,
-    if(req.signedCookies.user === 'admin') {
+    // if session contains the correct information,
+    if(req.session.user === 'admin') {
       // then allow the request to pass through
       next();
     }
