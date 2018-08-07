@@ -12,6 +12,8 @@ dishRouter.route('/')
 // get request is allowed to any user without restrictions
 .get((req, res, next) => {
   Dishes.find({})
+  // when the dish is constructed, I populate author field from User document
+  .populate('comments.author')
   .then((dishes) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -52,6 +54,7 @@ dishRouter.route('/')
 dishRouter.route('/:dishId')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -88,6 +91,7 @@ dishRouter.route('/:dishId')
 dishRouter.route('/:dishId/comments')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     if (dish != null) {
       res.statusCode = 200;
@@ -106,6 +110,8 @@ dishRouter.route('/:dishId/comments')
   Dishes.findById(req.params.dishId)
   .then((dish) => {
     if (dish != null) {
+      // by authenticating a user above, I already know which user is posting a comment
+      req.body.author = req.user._id;
       dish.comments.push(req.body);
       dish.save()
       .then((dish) => {
@@ -153,6 +159,7 @@ dishRouter.route('/:dishId/comments')
 dishRouter.route('/:dishId/comments/:commentId')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     // both dish and comments exist
     if (dish != null && dish.comments.id(req.params.commentId) != null) {
