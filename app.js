@@ -11,6 +11,8 @@ var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 const mongoose = require('mongoose');
 
@@ -47,6 +49,9 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', index);
 app.use('/users', users);
 
@@ -57,24 +62,14 @@ function auth(req, res, next) {
   //if the session doesn't contain the user property,
   // the a user has to use an authorization header for authorization,
   // if user is not authenticated (logged in)
-  if(!req.session.user) {
+  if(!req.user) {
     var err = new Error('You are not authenticated!');
     res.setHeader('WWW-Authenticate', 'Basic');
     err.status = 403;
     return next(err);
   }
-  // if the cookie exists and the user property is defined
   else {
-    // if session contains the correct information,
-    if(req.session.user === 'authenticated') {
-      // then allow the request to pass through
-      next();
-    }
-    else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
-    }
+    next();
   }
 }
 
