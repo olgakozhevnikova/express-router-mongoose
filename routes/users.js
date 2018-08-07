@@ -2,6 +2,7 @@ var express = require('express');
 const bodyParser = require('body-parser');
 var User = require('../models/user');
 var passport = require('passport');
+var authenticate = require('../authenticate');
 
 var router = express.Router();
 router.use(bodyParser.json());
@@ -33,9 +34,13 @@ router.post('/signup', (req, res, next) => {
 // when a user tryies to log in, first we call passport.authenticate method,
 // if it is successful, then next function will be executed
 router.post('/login', passport.authenticate('local'), (req, res, next) => {
+  // in the file authenticate.js I pass user the function getToken(user),
+  // after a user is authenticated, create the token
+  var token = authenticate.getToken({_id: req.user._id})
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  res.json({success: true, status: 'You have successfully logged in!'});
+  // the token, that was just created, I pass to the response message as a second property
+  res.json({success: true, token: token, status: 'You have successfully logged in!'});
 });
 
 router.get('/logout', (req, res, next) => {

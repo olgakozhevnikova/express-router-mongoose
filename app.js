@@ -13,12 +13,14 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 const mongoose = require('mongoose');
 
 const Dishes = require('./models/dishes');
 
-const url = 'mongodb://localhost:27017/conFusion';
+// take the url from config.js
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then((db) => {
@@ -40,41 +42,10 @@ app.use(express.urlencoded({ extended: false }));
 // pass the secret key to the cookieParser()
 // app.use(cookieParser('12345-67890-09876-54321'));
 
-// this session middleware adds req.session to the request message
-app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore()
-}));
-
 app.use(passport.initialize());
-app.use(passport.session());
 
 app.use('/', index);
 app.use('/users', users);
-
-// Authentication function
-function auth(req, res, next) {
-  console.log(req.session);
-
-  //if the session doesn't contain the user property,
-  // the a user has to use an authorization header for authorization,
-  // if user is not authenticated (logged in)
-  if(!req.user) {
-    var err = new Error('You are not authenticated!');
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 403;
-    return next(err);
-  }
-  else {
-    next();
-  }
-}
-
-// Authentication
-app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
