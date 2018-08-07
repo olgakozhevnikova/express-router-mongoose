@@ -31,6 +31,18 @@ connect.then((db) => {
 
 var app = express();
 
+app.all('*', (req, res, next) => {
+  // if incoming request is a secure request
+  if (req.secure) {
+    return next();
+  }
+  else {
+    // return status 307 - the user agent must not change the request method 
+    // if it performs an automatic redirection to that URI
+    res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
+  }
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
